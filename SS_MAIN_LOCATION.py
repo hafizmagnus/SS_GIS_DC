@@ -1,3 +1,4 @@
+# RlVDSyBZT1UgQlVERFkh
 # -------------------------------------------------------------------------------
 # Name:        Check SS Main Locaiton & Add Loction Code
 # Purpose:     Provide GIS Data Managers with a tool to check topology
@@ -18,7 +19,7 @@ import arcpy
 __version__ = "1.1"
 
 
-#geometry correction for area modification
+# geometry correction for area modification
 def geo_mod_correction(main_feature, SS_feature):
     SS_MOD_CLIP = "in_memory" + "//" + "SS_CLIPPED"
     arcpy.Clip_analysis(SS_feature, main_feature, SS_MOD_CLIP)
@@ -37,7 +38,7 @@ def geo_mod_correction(main_feature, SS_feature):
                                 continue
 
 
-#ensuring no overlaps with the current EVE layers
+# ensuring no overlaps with the current EVE layers
 def NON_SS_modify(main_feature, EVE_layers):
     arcpy.AddMessage("\nChecking if any overlaps are present..........")
     arcpy.GetMessages(0)
@@ -218,44 +219,44 @@ def loc_cd_populator(main_feature, SS_EVE_Layer):
 #-------------------------------------------------------------------------------
 
 
-#setting out the enviormental parameters
+# setting out the enviormental parameters
 main_location = arcpy.GetParameterAsText(0)
 workspace = os.path.dirname(main_location)
 folder = os.path.dirname(workspace)
 arcpy.env.workspace = workspace
 
-#allowing for overwrite
+# allowing for overwrite
 arcpy.env.overwriteOutput = True
 
-#creating the location codes logic dictionary
+# creating the location codes logic dictionary
 loc_ty_dict = {
-"R":"A",
-"S":"AS",
-"O":"AO",
-"F":"AF",
-"GP":"AGP",
-"D":"AD"
+    "R": "A",
+    "S": "AS",
+    "O": "AO",
+    "F": "AF",
+    "GP": "AGP",
+    "D": "AD"
 }
 
-#the error counter
+# the error counter
 error_count = 0
 
-#creating the view only database file connection if it does not exists
+# creating the view only database file connection if it does not exists
 con_path = folder + "\\" + "MAVEN_VIEW_TEMP.sde"
 u = "U1NfR0lTX1ZJRVc="
 p = "U1NnaXNWaWV3QDEyMw=="
-if os.path.exists(con_path) == True:
+
+if os.path.exists(con_path):
     os.remove(con_path)
 arcpy.CreateDatabaseConnection_management(folder, "MAVEN_VIEW_TEMP.sde", "SQL_SERVER", "NPMAVCLUS02\MSSQLSERVER1,60001", "DATABASE_AUTH", base64.b64decode(u), base64.b64decode(p), "SAVE_USERNAME", "Maven")
 
 LIVE_SS = con_path + '\\' + r'Maven.OPS.EVE_GIS\Maven.OPS.STREETSCAPE_LOCATION_BOUNDARY'
 LIVE_PK = con_path + '\\' + r'Maven.OPS.EVE_GIS\Maven.OPS.PARK_MAINTENANCE_BOUNDARY'
 LIVE_EX = con_path + '\\' + r'Maven.OPS.EVE_GIS\Maven.OPS.EXTERNAL_AGENCY_LOCATION_BOUNDARY'
-LIVE_HT = con_path + '\\' + r'Maven.OPS.EVE_GIS\Maven.OPS.HERITAGETREES_MAINTENANCE_BOUNDARY'
 LIVE_SS_TREES = con_path + '\\' + r'Maven.OPS.EVE_GIS\Maven.OPS.STREETSCAPETREES'
 LIVE_SS_SUB = con_path + '\\' + r'Maven.OPS.EVE_GIS\Maven.OPS.STREETSCAPE_SUBLOCATION_BOUNDARY'
 
-LIVE_LIST = [LIVE_EX, LIVE_HT, LIVE_PK, LIVE_SS]
+LIVE_LIST = [LIVE_EX, LIVE_PK, LIVE_SS]
 
 arcpy.RepairGeometry_management(main_location)
 
@@ -266,7 +267,7 @@ edit.startOperation()
 loc_cd_populator(main_location, LIVE_SS)
 
 #correction for modification check
-MOD_LIVE_LIST = [LIVE_EX, LIVE_PK, LIVE_HT]
+MOD_LIVE_LIST = [LIVE_EX, LIVE_PK]
 NON_SS_modify(main_location, MOD_LIVE_LIST)
 geo_mod_correction(main_location, LIVE_SS)
 
