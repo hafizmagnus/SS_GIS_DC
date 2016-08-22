@@ -112,14 +112,12 @@ def main_temp_check(s_template, m_template_clipped):
         layer_attr = arcpy.AddFieldDelimiters(m_template_clipped, "LOC_CD")
         whereClause = layer_attr + " IN " + str(tuple(loc_cd_list))
 
-    if len(whereClause):
-        arcpy.MakeFeatureLayer_management(m_template_clipped, "M_FEATS", whereClause)
-    else:
-        arcpy.MakeFeatureLayer_management(m_template_clipped, "M_FEATS")
-
+    # if there are items in the code list, this segment will run
+    arcpy.MakeFeatureLayer_management(m_template_clipped, "M_FEATS", whereClause)
     result = arcpy.GetCount_management("M_FEATS")
     count = int(result.getOutput(0))
 
+    # this segment will run only if there are features in the m_feats layer
     if count > 0:
         for location in loc_cd_list:
             new_clause = layer_attr + " = '" + str(location) + "'"
@@ -179,7 +177,7 @@ def sub_loc_populator(s_template):
 
 # funtion to correct the geometry if based on live streetscape managed areas
 def live_ss_geo_correction(s_template, ss_live):
-
+    global error_count
     if len(loc_cd_list) == 0:
         return
 
@@ -191,6 +189,7 @@ def live_ss_geo_correction(s_template, ss_live):
         layer_attr = arcpy.AddFieldDelimiters(ss_live, "LOC_CD")
         whereClause = layer_attr + " IN " + str(tuple(loc_cd_list))
 
+    # this segment will only run if there are features in the loc_cd_list
     arcpy.MakeTableView_management(ss_live, "SS_FEATS", whereClause)
     result = arcpy.GetCount_management("SS_FEATS")
     count = int(result.getOutput(0))
@@ -236,11 +235,8 @@ def mod_check(s_template, ss_sub_live):
         layer_attr = arcpy.AddFieldDelimiters(ss_sub_live, "SUB_LOC_CD")
         whereClause = layer_attr + " IN " + str(tuple(s_mod_list))
 
-    if len(whereClause) == 0:
-        arcpy.MakeFeatureLayer_management(ss_sub_live, "SS_SUB_FEATS", whereClause)
-    else:
-        arcpy.MakeFeatureLayer_management(ss_sub_live, "SS_SUB_FEATS")
-
+    # this segment only runs if there are items in the s_mod_list
+    arcpy.MakeFeatureLayer_management(ss_sub_live, "SS_SUB_FEATS", whereClause)
     result = arcpy.GetCount_management("SS_SUB_FEATS")
     count = int(result.getOutput(0))
 
@@ -260,8 +256,9 @@ def mod_check(s_template, ss_sub_live):
             error_count += 1
 
 
-#function to check that no multiple sub-locations exists
+# function to check that no multiple sub-locations exists
 def check_sub_location_count(s_template):
+    global error_count
     s_loc_list = []
     with arcpy.da.SearchCursor(s_template, ["SUB_LOC_CD"]) as scursor:
         for row in scursor:
