@@ -139,7 +139,7 @@ def loc_cd_populator(main_feature, SS_EVE_Layer):
                     lc_text = loc_ty_dict[row[1]] + row[2]
                     layer_att = arcpy.AddFieldDelimiters(SS_EVE_Layer, "LOC_CD")
                     main_sql = layer_att + " LIKE " + " '" + lc_text + "%' "
-                    arcpy.MakeTableView_management(SS_EVE_Layer, ss_table_view, where_clause=main_sql)
+                    arcpy.MakeFeatureLayer_management(SS_EVE_Layer, ss_table_view, where_clause=main_sql)
                     result = arcpy.GetCount_management(ss_table_view)
                     count = int(result.getOutput(0))
                     if count > 0:
@@ -153,7 +153,7 @@ def loc_cd_populator(main_feature, SS_EVE_Layer):
                     else:
                         f_loc_cd = lc_text + ((str(lc_number)).zfill(3))
 
-                    #checking the internal dataset if the location code has been assigned
+                    # checking the internal dataset if the location code has been assigned
                     if f_loc_cd not in f_loc_cd_list:
                         f_loc_cd_list.append(f_loc_cd)
                         row[3] = f_loc_cd
@@ -190,7 +190,7 @@ def loc_cd_populator(main_feature, SS_EVE_Layer):
                     arcpy.GetMessages(0)
                     layer_att = arcpy.AddFieldDelimiters(SS_EVE_Layer, "LOC_CD")
                     main_sql = layer_att + " = " + " '" + str(row[3]) + "' "
-                    arcpy.MakeTableView_management(SS_EVE_Layer, ss_table_view, where_clause=main_sql)
+                    arcpy.MakeFeatureLayer_management(SS_EVE_Layer, ss_table_view, where_clause=main_sql)
                     aresult = arcpy.GetCount_management(ss_table_view)
                     acount = int(aresult.getOutput(0))
                     if acount != 1:
