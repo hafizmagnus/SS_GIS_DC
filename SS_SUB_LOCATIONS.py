@@ -1,4 +1,5 @@
-#-------------------------------------------------------------------------------
+# RlVDSyBZT1UgQlVERFkh
+# -------------------------------------------------------------------------------
 # Name:        Check SS Sub-location and Add Sub-Location Code
 # Purpose:     Provide SS GIS Data Managers with a tool to check topology
 #
@@ -7,22 +8,22 @@
 # Created:     08/06/2016
 # Copyright:   (c) National Parks Board 2016
 # Licence:     Enterprise Perpetual
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 import base64
 import collections
 import os
-import re
 
 import arcpy
 
-__version__ = "0.5"
+__version__ = "1.1"
 
 loc_cd_list = []
 main_location = None
 error_count = 0
 
-#function to get the main location template from just the sub-location
+
+# function to get the main location template from just the sub-location
 def get_main_location_template(s_template):
     global main_location
     main = None
@@ -41,7 +42,7 @@ def get_main_location_template(s_template):
                 main_location = workspace + "\\" + main
 
 
-#function to just pull out the location codes from the sublocation template
+# function to just pull out the location codes from the sublocation template
 def location_code_extractor(s_template):
     global loc_cd_list
     with arcpy.da.SearchCursor(s_template, ["LOC_CD"]) as sc:
@@ -50,36 +51,36 @@ def location_code_extractor(s_template):
                 loc_cd_list.append(i[0])
 
 
-#function to check attribution of the sub-locations
+# function to check attribution of the sub-locations
 def sub_location_attributes(s_template, m_template_clipped, ss_live, ss_sub_live):
     global error_count
     with arcpy.da.UpdateCursor(s_template, ["OID@", "LOC_CD", "LOC_DESC", "SUB_LOC_DESC", "EDIT_TYPE", "SUB_LOC_CD"]) as scursor:
         for row in scursor:
-            if row[1] == None:
+            if row[1] is None:
                 arcpy.AddError("\tERROR. OBJECTID {0} does not have a Location Code.\n".format(row[0]))
                 arcpy.GetMessages(2)
                 error_count += 1
                 continue
 
-            elif row[2] == None:
+            elif row[2] is None:
                 arcpy.AddError("\tERROR. OBJECTID {0} does not have a Location Description.\n".format(row[0]))
                 arcpy.GetMessages(2)
                 error_count += 1
                 continue
 
-            elif row[3] == None:
+            elif row[3] is None:
                 arcpy.AddError("\tERROR. OBJECTID {0} does not have a Sub-Location Description.\n".format(row[0]))
                 arcpy.GetMessages(2)
                 error_count += 1
                 continue
 
-            elif row[4] == None:
+            elif row[4] is None:
                 arcpy.AddError("\tERROR. OBJECTID {0} does not have an Edit Type.\n".format(row[0]))
                 arcpy.GetMessages(2)
                 error_count += 1
                 continue
 
-            elif row[4] == "MODIFY" and row[5] == None:
+            elif row[4] == "MODIFY" and row[5] is None:
                 arcpy.AddError("\tERROR. OBJECTID {0} is a modification but does not have a Sub-Location Code.\n".format(row[0]))
                 arcpy.GetMessages(2)
                 error_count += 1
@@ -96,8 +97,7 @@ def sub_location_attributes(s_template, m_template_clipped, ss_live, ss_sub_live
                 check_sub_location_count(s_template)
 
 
-
-#function to check if sub-location is from a new main location
+# function to check if sub-location is from a new main location
 def main_temp_check(s_template, m_template_clipped):
     global loc_cd_list
 
@@ -112,10 +112,12 @@ def main_temp_check(s_template, m_template_clipped):
         layer_attr = arcpy.AddFieldDelimiters(m_template_clipped, "LOC_CD")
         whereClause = layer_attr + " IN " + str(tuple(loc_cd_list))
 
-    arcpy.MakeTableView_management(m_template_clipped, "M_FEATS", whereClause)
+    # if there are items in the code list, this segment will run
+    arcpy.MakeFeatureLayer_management(m_template_clipped, "M_FEATS", whereClause)
     result = arcpy.GetCount_management("M_FEATS")
     count = int(result.getOutput(0))
 
+    # this segment will run only if there are features in the m_feats layer
     if count > 0:
         for location in loc_cd_list:
             new_clause = layer_attr + " = '" + str(location) + "'"
@@ -126,18 +128,18 @@ def main_temp_check(s_template, m_template_clipped):
                         with arcpy.da.UpdateCursor(s_template, ["EDIT_TYPE", "SHAPE@"], new_clause) as ucursor:
                             for subloc in ucursor:
                                 if subloc[0] == "CREATE":
-                                    if mloc[1].contains(subloc[1]) == False:
+                                    if mloc[1].contains(subloc[1]) is False:
                                         subloc[1] = mloc[1].intersect(subloc[1], 4)
                                     subloc[0] = "NEW FROM MAIN LOC TEMPLATE"
                                     ucursor.updateRow(subloc)
                                 elif subloc[0] == "MODIFY":
-                                    if mloc[1].contains(subloc[1]) == False:
+                                    if mloc[1].contains(subloc[1]) is False:
                                         subloc[1] = mloc[1].intersect(subloc[1], 4)
                                     subloc[0] = "MODIFY FROM MAIN LOC TEMPLATE"
                                     ucursor.updateRow(subloc)
 
 
-#function to populate the sublocation code for new locations
+# function to populate the sublocation code for new locations
 def sub_loc_populator(s_template):
     arcpy.AddMessage("\nPopulating the sub-location codes for new areas..........")
     arcpy.GetMessages(0)
@@ -173,9 +175,9 @@ def sub_loc_populator(s_template):
         arcpy.GetMessages(0)
 
 
-#funtion to correct the geometry if based on live streetscape managed areas
+# funtion to correct the geometry if based on live streetscape managed areas
 def live_ss_geo_correction(s_template, ss_live):
-
+    global error_count
     if len(loc_cd_list) == 0:
         return
 
@@ -187,9 +189,11 @@ def live_ss_geo_correction(s_template, ss_live):
         layer_attr = arcpy.AddFieldDelimiters(ss_live, "LOC_CD")
         whereClause = layer_attr + " IN " + str(tuple(loc_cd_list))
 
+    # this segment will only run if there are features in the loc_cd_list
     arcpy.MakeTableView_management(ss_live, "SS_FEATS", whereClause)
     result = arcpy.GetCount_management("SS_FEATS")
     count = int(result.getOutput(0))
+    layer_attr = arcpy.AddFieldDelimiters(ss_live, "LOC_CD")
 
     if count == 0:
         for loc in loc_cd_list:
@@ -206,12 +210,13 @@ def live_ss_geo_correction(s_template, ss_live):
                         with arcpy.da.UpdateCursor(s_template, ["EDIT_TYPE", "SHAPE@"], new_clause) as ucursor:
                             for subloc in ucursor:
                                 if subloc[0] == "CREATE" or subloc[0] == "MODIFY":
-                                    if ssloc[1].contains(subloc[1]) == False:
+                                    if ssloc[1].contains(subloc[1]) is False:
                                         subloc[1] = ssloc[1].intersect(subloc[1], 4)
 
 
-#function to check if modified sub location exists
+# function to check if modified sub location exists
 def mod_check(s_template, ss_sub_live):
+    global error_count
     s_list = []
     s_mod_list = []
     with arcpy.da.SearchCursor(s_template, ["OID@", "EDIT_TYPE", "SUB_LOC_CD"]) as scursor:
@@ -230,7 +235,8 @@ def mod_check(s_template, ss_sub_live):
         layer_attr = arcpy.AddFieldDelimiters(ss_sub_live, "SUB_LOC_CD")
         whereClause = layer_attr + " IN " + str(tuple(s_mod_list))
 
-    arcpy.MakeTableView_management(ss_sub_live, "SS_SUB_FEATS", whereClause)
+    # this segment only runs if there are items in the s_mod_list
+    arcpy.MakeFeatureLayer_management(ss_sub_live, "SS_SUB_FEATS", whereClause)
     result = arcpy.GetCount_management("SS_SUB_FEATS")
     count = int(result.getOutput(0))
 
@@ -250,8 +256,9 @@ def mod_check(s_template, ss_sub_live):
             error_count += 1
 
 
-#function to check that no multiple sub-locations exists
+# function to check that no multiple sub-locations exists
 def check_sub_location_count(s_template):
+    global error_count
     s_loc_list = []
     with arcpy.da.SearchCursor(s_template, ["SUB_LOC_CD"]) as scursor:
         for row in scursor:
